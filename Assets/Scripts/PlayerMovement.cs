@@ -1,41 +1,44 @@
 using UnityEngine;
 
-public class Player : MonoBehaviour
+public class PlayerMovement : MonoBehaviour
 {
+    [Range(0f, 1f)] [SerializeField] private float _runningResponsiveness = .6f;
+    [SerializeField] private float _runningSpeed = 5f;
+    [SerializeField] private float _jumpStrength = 10f;
+    [SerializeField] private int _maxJumps = 2;
+
+    [SerializeField] private Transform feetTransform;
+    [SerializeField] private Transform cameraTransform;
+
     private Rigidbody _rigidbody;
+
+    private int _remainingJumps;
 
     private float _horizontalInput;
     private float _verticalInput;
     private bool _jumpInput;
     
     private Vector2 _runningInput;
-    private Quaternion _rotation;
-
-    [Range(0f, 1f)] [SerializeField] private float _runningResponsiveness = .6f;
-    [SerializeField] private float _runningSpeed = 5f;
-    [SerializeField] private float _jumpStrength = 10f;
-
-    [SerializeField] private Transform feetTransform;
-    [SerializeField] private Transform cameraTransform;
     
     public void Start()
     {
         _rigidbody = GetComponent<Rigidbody>();
+        _remainingJumps = _maxJumps;
     }
 
     public void Update()
     {
         _horizontalInput = Input.GetAxisRaw("Horizontal");
         _verticalInput = Input.GetAxisRaw("Vertical");
-        _jumpInput = Input.GetButton("Jump");
+        _jumpInput = Input.GetButtonDown("Jump");
 
         _runningInput = new Vector2(_horizontalInput, _verticalInput);
     }
 
     public void FixedUpdate()
     {
-        Run();
         Jump();
+        Run();
     }
 
     private void Run()
@@ -60,8 +63,14 @@ public class Player : MonoBehaviour
     }
     private void Jump()
     {
-        if (_jumpInput && Physics.OverlapSphere(feetTransform.position, .001f).Length > 1)
+        if (!_jumpInput) return;
+        if (Physics.OverlapSphere(feetTransform.position, .01f).Length > 1)
         {
+            _remainingJumps = _maxJumps;
+        }
+        if (_remainingJumps > 0)
+        {
+            --_remainingJumps;
             _rigidbody.AddForce(Vector3.up * _jumpStrength, ForceMode.VelocityChange);
         }
     }
